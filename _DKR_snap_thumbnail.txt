@@ -1,0 +1,19 @@
+//20110210 ciclistadan
+//pull out a single slice from a volume/timeseries and flatten the colors
+//for use in a quick viewer
+
+macro "snap"{
+
+name = getTitle()+"_snap";
+
+run("Duplicate...", "title="+name+" duplicate");
+
+selectWindow(name);
+run("RGB Color");
+
+run("Save");
+
+selectWindow(name);
+close();
+selectWindow(name+" (RGB).tif");
+close();

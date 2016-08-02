@@ -1,0 +1,173 @@
+//20090624 ciclistadan
+//
+//used to visually compare all linearized spindles from an imaging session
+//
+//open each and find the largest dimension image
+//adjust canvas of each to the largest dimensions
+//sort these images based on their width, open them again in this order and
+//combine images into a stack followed by an auto-montage
+//
+//image workflow:
+//this is used i nconjunction with several other macros, typical workflow includes
+//1.)_DKR_2umProjection.txt: auto project a spindle-localized stack
+//2.)_DKR_Straighten_Spindle_Batch.txt: linearizes the spindle, output image of linearized spindle
+//3a.)_DKR_GroupProjector.txt: groups linearizer spindles based on length, projects each grouping, and create a montage
+//3b.)_DKR_SpindleSortedMontage.txt: adjusts canvas size of all linearized spindles, sorts them, and creates a montage
+
+function setBackground();
+
+macro "group project"{
+
+setFont("SansSerif", 10, " antialiased");
+run("Colors...", "foreground=white background=black selection=yellow");
+
+// get the directory and save the file names to an array 
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+prelist = getFileList(dir1);
+
+
+//count only tifs
+tifs=0;
+for(i=0;i<prelist.length;i++){
+	if(endsWith(prelist[i],"tif") || endsWith(prelist[i],"TIF")){
+		tifs++;
+		}
+	}
+
+//make another list, only with the tif images
+j=0;
+list = newArray(tifs);
+for(i=0;i<prelist.length;i++){
+	if(endsWith(prelist[i],"tif") || endsWith(prelist[i],"TIF")){
+		list[j] = prelist[i];
+		j++;
+		}
+	}
+
+
+//search for the largest image
+widthmax = 0;
+heightmax = 0;
+spindle = newArray(list.length);
+for(i=0;i<list.length;i++){
+	open(dir1+list[i]);
+	selectWindow(list[i]);
+	getDimensions(width, height, channels, slices, frames);
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	spindle[i]=width;
+	
+	if(width > widthmax) {
+		widthmax = width;
+		}
+	if(height > heightmax) {
+		heightmax = height;
+		}
+	close();
+	}
+
+//sort this array of images based on their width (spindle length) 
+do{
+//search through the entire array of lengths for out of order until none are found
+	swap=0;
+	for(i=0;i<(spindle.length-1);i++){
+
+		//check to see if they are out of order, swap if they are
+		if(spindle[i] > spindle[i+1]){
+			temp = spindle[i+1];
+			spindle[i+1] = spindle[i];
+			spindle[i] = temp;
+
+			temp = list[i+1];
+			list[i+1] = list[i];
+			list[i] = temp;
+			
+			swap++;
+			}
+		}
+	} while(swap>0);
+
+
+
+//now we have a sorted list of spindles
+//open all images with a similar spindle length, project then, save the projection, and close it, repeat for all lengths 1-10um
+
+//open each image, change the canvas size to max height and width and set the new background appropriately
+
+//do this for each desired spindle length
+for(s=1;s<11;s++){
+	slices=0;
+	//scan spindle[i] list to see if it the correct length
+	for(i=0;i<spindle.length;i++){
+		//if it is the correct spindle, open it, change the canvas size, set its background, and go on to the next one
+		
+		if(round(spindle[i]*pixelWidth)==s){
+			open(dir1+list[i]);
+			selectWindow(list[i]);
+			run("Canvas Size...", "width="+widthmax+" height="+heightmax+" position=Center zero");
+			setBackground();	
+			slices++;
+			}
+		}
+		print("there are "+slices+" spindles of length "+s);
+		//project all open spindles (now all the same size) and save it for later
+		if(slices>1){
+			run("Images to Stack");
+			run("Z Project...", "start=1 stop="+slices+" projection=[Max Intensity]");
+			saveAs("Tif", dir1+s+"um spindles");
+			close();
+			selectWindow("Stack");
+			close();
+			}
+		else if(slices==1){
+			saveAs("Tif", dir1+s+"um spindles");
+			close();
+			}
+		else{
+			newImage("composite", "32-bit Black", widthmax, heightmax, 1);
+			setBackground();
+			saveAs("Tif", dir1+s+"um spindles");
+			close();
+			}
+		
+	}
+
+
+
+//reopen the projected images, combine into a stack and then make a montage
+for(s=1;s<11;s++){
+	open(dir1+s+"um spindles.tif");
+	}
+run("Images to Stack", "name=Stack");
+run("Make Montage...", "columns=1 rows=10 scale=1 first=1 last=10 increment=1 border=1 ");
+run("royal_whiteout");
+run("Enhance Contrast", "saturated=0.5");
+run("Set... ", "zoom=300");
+
+selectWindow("Stack");
+close();
+
+}
+
+
+
+
+
+
+function setBackground(){
+
+getDimensions(width, height, channels, slices, frames);
+BACKGROUND =  32768;
+x=0;
+y=0;
+for(y=0;y<heightmax;y++){
+	for(x=0;x<widthmax;x++){
+		value = getPixel(x,y);
+		if(value==0){
+			setPixel(x,y,BACKGROUND);
+			}
+		}
+	}
+
+}

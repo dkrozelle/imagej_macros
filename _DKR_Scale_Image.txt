@@ -1,0 +1,20 @@
+macro "scale [l]" {
+
+Dialog.create("Define Channels");
+ 	Dialog.addNumber("Scale",2);
+	Dialog.show();
+	SCALING=Dialog.getNumber();
+
+getDimensions(width, height, channels, slices, frames);
+
+for(y=1;y<=height;y++){
+	for(x=1;x<=height;x++){
+		value = getPixel(x,y);
+		setPixel(x,y,value*SCALING);
+
+		}
+	}
+
+
+
+}

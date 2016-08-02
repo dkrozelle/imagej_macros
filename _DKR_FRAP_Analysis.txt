@@ -1,0 +1,70 @@
+macro "_DKR_FRAP_Analysis"
+{
+
+//define and setup
+bleach_timepoint =   4;     //frame number that shows first bleached image
+bleachsize       =  10;     //diameter in pixels
+run("Set Measurements...", "  mean display redirect=None decimal=2");
+
+//adaptive mode searches for greatest-bleached point and places coords there, 
+//otherwise at center of image
+adaptive         =  "FALSE";
+
+if(isOpen("Results")){
+	selectWindow("Results");
+	run("Close"); 
+	}
+	
+//set image stats
+stack=File.name;
+getDimensions(width, height, channels, slices, frames);
+wide=width;
+high=height;
+
+
+if(adaptive=="TRUE"){
+	//to determine the most bleached point, we subtract pre from post-bleached slices
+	selectImage(stack);
+	setSlice(bleach_timepoint-1);
+	run("Duplicate...", "title=prebleached");
+	
+	selectImage(stack);
+	setSlice(bleach_timepoint);
+	run("Duplicate...", "title=bleached");
+	
+	//find the bleach point
+	run("Calculator Plus", "i1=bleached i2=prebleached operation=[Subtract: i2 = (i1-i2) x k1 + k2] k1=1 k2=0 create");
+	selectImage("prebleached");
+	close();
+	selectImage("bleached");
+	close();
+	selectImage("Result");
+	run("Find Maxima...", "noise=100 output=[Point Selection]");
+	
+	//make a ROI before measuring
+	getSelectionCoordinates(xCoord,yCoord);
+	x=(xCoord[0])-(bleachsize/2);
+	y=(yCoord[0])-(bleachsize/2);
+	run("Specify...", "width="+bleachsize+" height="+bleachsize+" x="+x+" y="+y+" oval");
+	}
+
+else{
+	x=(wide/2)-(bleachsize/2);
+	y=(high/2)-(bleachsize/2);
+	run("Specify...", "width="+bleachsize+" height="+bleachsize+" x="+x+" y="+y+" oval");
+	}
+
+waitForUser("move ROI is desired");
+
+no=roiManager("count");
+roiManager("add");
+selectImage(stack);	
+roiManager("Select", no);
+roiManager("Multi Measure");
+
+saveAs("Measurements", "C:\\Users\\dkrozelle\\Desktop\\"+stack+".xls");
+if(File.exists("C:\\Users\\dkrozelle\\Desktop\\"+stack+".xls")){
+	selectWindow("Results");
+	run("Close"); 
+	}
+}

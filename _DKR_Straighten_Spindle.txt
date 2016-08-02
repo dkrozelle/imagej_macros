@@ -1,0 +1,99 @@
+//ImageJ macro
+//20090617
+//made by Dan Rozelle
+//
+//macro made when I was trying to compare recruitment of fluorescent motors on the anaphse spindle.
+//this macro takes a folder of projected spindles as input and creates an image for each projection
+//where the spindle is straightened and positioned horizontally
+//essentially this automates the "Deconvolution>Straighten to Line" plugin 
+//
+//this also places the pixel values of the spindle from this horizontal line into a results table
+//which can then be manipulated in excel, etc...
+
+
+
+macro "_DKR_Straighten_Spindle" {
+
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+
+//get a list of all the files in this folder 
+list = getFileList(dir1);
+
+// Create a results directory in dir1
+  dir2 = dir1+"Linearized Spindles"+File.separator;
+  File.makeDirectory(dir2);
+  if (!File.exists(dir2))
+      exit("Unable to create directory");
+
+
+for(i=0;i<list.length;i++){
+	
+	open(dir1+list[i]);
+	
+selectWindow(list[i]);
+Stack.getDimensions(width, height, channels, slices, frames);
+
+//get rid of the second channel if present
+if(channels > 1) {
+	run("Stack to Images");
+	nameext = list[i];
+	name = substring(nameext,0,lengthOf(nameext)-4);
+	
+	selectWindow(name+"-0002");
+	close();
+	selectWindow(name+"-0001");
+	rename(list[i]);
+	}
+
+//prepare image for straightening, start the straighten plugin 
+selectWindow(list[i]);
+run("Grays");
+run("Enhance Contrast", "saturated=0.5");
+//once you convert to 32-bit, DO NOT CONVERT BACK TO 16-BIT, 
+//ImageJ opens DV files as 16-bit signed int, but conversion back will give 16-bit unsigned int...very different
+run("32-bit");
+run("Straighten to Line");
+run("Set... ", "zoom=400");
+setLocation(200,0);
+
+//close original image
+selectWindow(list[i]);
+close();
+
+//user draws a segmented line to be straightened, clicks the straighten line, and then proceeds
+waitForUser("straighten the spindle and close the plugin window");
+selectWindow("Straighten: "+list[i]);
+close();
+
+//rename straightened image
+selectWindow("(1) Straightened Filament ");
+
+run("Properties...", "unit=micron pixel_width=0.1121460 pixel_height=0.1121460 ");
+savename = "spdl_"+list[i];
+saveAs("Tiff", dir2+savename);
+
+//append pixel veasurements to results table
+	getDimensions(width, height, channels, slices, frames);
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	spindleLength = width*pixelWidth;
+	
+	//add more lines in the results table if it is not long enough
+	for(line=0;line<width;line++){
+		setResult(unit,line,line*pixelWidth);
+		}
+	//append the data to a new labeled column
+	for(line=0;line<width;line++){
+		value = (getPixel(line,height/2))-32768;
+		setResult(savename,line,value);
+		}
+	
+	updateResults();
+	selectWindow(savename);
+	close();
+
+}
+
+}

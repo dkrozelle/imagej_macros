@@ -1,0 +1,36 @@
+macro "Kymograph Scale Bar" {
+
+//Dialog to define inputs
+		
+ 	Dialog.create("Kymograph ScaleBar");
+ 	
+	Dialog.addNumber("time length (min)",10);
+	Dialog.addNumber("distance (um)",1);
+	Dialog.addNumber("offset from corner",5);
+	Dialog.addNumber("known pixel size",0.11215);
+	Dialog.addNumber("minutes/pixel", 0.588);
+		
+	Dialog.show();
+
+	timelength=Dialog.getNumber();
+	distancelength=Dialog.getNumber();
+	offset=Dialog.getNumber();
+	distancescale=Dialog.getNumber();
+	timescale=Dialog.getNumber();
+
+
+run("Colors...", "foreground=white background=black selection=yellow");
+
+height=getHeight();
+distancepixels=distancelength/distancescale;
+//draw the vertical bar
+run("Specify...", "width=1 height="+distancepixels+" x="+offset+" y="+(height-offset-distancepixels));
+run("Fill");
+
+timepixels=timelength/timescale;
+//draw the horizontal bar
+run("Specify...", "width="+timepixels+" height=1 x="+offset+" y="+(height-offset-1));
+run("Fill");
+run("Select None");
+
+}

@@ -1,0 +1,65 @@
+//takes linearized spindle projections and writes a results table from 
+//a line drawn across the middle of the image (spindle center)
+//
+//***this macro takes ONLY the middle pixel value for each column, 
+//see _DKR_Measure_Linear_Spindle_Batch(Grp).txt for pooled center sections
+
+macro "_DKR_Measure_Linear_Spindle_Batch"{
+
+
+
+if(nImages>0) exit ("close all images before proceeding");
+run("Clear Results");
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+
+
+//get a list of all the files in this folder 
+list = getFileList(dir1);
+
+//iterate through each image
+for(i=0;i<list.length;i++){
+	
+	//open the image and set its variables
+	open(dir1+list[i]);
+	getDimensions(width, height, channels, slices, frames);
+	
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	name = getTitle;
+	run("Subtract Background...", "rolling=50");
+	//spindleLength = width*pixelWidth;
+	
+
+	//add more lines to the results table if it is not long enough
+	for(line=0;line<width;line++){
+		setResult(unit,line,line*pixelWidth);
+		}
+		
+	//append the data to a new labeled column
+	for(line=0;line<width;line++){
+	
+		//define where to take the data from
+		//place = 0;  //use this to get a line along the top of the image (backgroundish)
+		top = (height-15)/2;  //use this to get a line along midline
+			
+		run("Specify...", "width=1 height=15 x="+line+" y="+top);
+		getStatistics(area, mean);
+		value = round(mean);
+		setResult(name,line,value);
+		}
+	
+	updateResults();
+	selectWindow(list[i]);
+	
+	close();
+	wait(25);
+
+
+}
+
+selectWindow("Results");
+saveAs("Measurements", dir1+"Results.xls");
+print("Results saved as \n"+dir1+"Results.xls");
+

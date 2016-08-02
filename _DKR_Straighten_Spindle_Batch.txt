@@ -1,0 +1,133 @@
+//ImageJ macro
+//20090617
+//made by Dan Rozelle
+//
+//macro made when I was trying to compare recruitment of fluorescent motors on the anaphse spindle.
+//
+//takes a folder of projected spindles as input and creates an image for each projection
+//where the spindle is straightened and positioned horizontally
+//essentially this batches the "Deconvolution>Straighten to Line" plugin 
+//
+//this outputs the new spindle image and the pixel values of the spindle from this horizontal line into a results table
+//which can then be manipulated in Excel, etc...
+
+
+
+macro "_DKR_Straighten_Spindle_Batch" {
+
+
+if(nImages>0) exit ("close all images before proceeding");
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+
+//get a list of all the files in this folder 
+list = getFileList(dir1);
+
+// Create a results directory within dir1 if it doesn't already exist
+resultsfolder = "Linearized Spindles";
+dir2 = dir1+resultsfolder+File.separator;
+if(!File.exists(dir2)) File.makeDirectory(dir2);
+
+//ensure it was able to create dir2
+if(!File.exists(dir2))
+      exit("Unable to create directory");
+
+//iterate through each item in the dir1 folder
+for(i=0;i<list.length;i++){
+showStatus("image "+(i+1)+" of "+(list.length+1));
+showProgress(i/10);
+	//only open and process tif images
+	if(endsWith(list[i],"tif")||endsWith(list[i],"TIF")){
+		open(dir1+list[i]);
+		
+		//make sure the image is still 16-bit, otherwise skip
+		if(bitDepth()==16){
+			selectWindow(list[i]);
+			Stack.getDimensions(width, height, channels, slices, frames);
+			
+			//get rid of the second channel if necessary
+			if(channels > 1) {
+				run("Stack to Images");
+				nameext = list[i];
+				name = substring(nameext,0,lengthOf(nameext)-4);
+				
+				selectWindow(name+"-0002");
+				close();
+				selectWindow(name+"-0001");
+				rename(list[i]);
+				}
+			
+			//prepare image for straightening, start the straighten plugin 
+			selectWindow(list[i]);
+			run("Grays");
+			
+			//once you convert to 32-bit, DO NOT CONVERT BACK TO 16-BIT! 
+			//ImageJ opens DV files as 16-bit signed int, but conversion back will give 16-bit unsigned int...very different
+			run("32-bit");
+			run("Straighten to Line");
+			run("Set... ", "zoom=300");
+			run("Enhance Contrast", "saturated=0.5");
+			setLocation(200,0);
+			
+			//close original image
+			selectWindow(list[i]);
+			close();
+			
+			//user draws a segmented line to be straightened, clicks the straighten line, and then proceeds
+			waitForUser("Straightenizer","straighten the spindle and click OK \n if you want to repeat this spindle, \nclose new straightened image and click OK ");
+			
+			// repeat this list[i] if you forget to straighten or you want to repeat this spindle, else continue with macro
+			if(nImages<2){ 
+				i--;
+				}
+			else{
+				selectWindow("Straighten: "+list[i]);
+				close();
+									
+				run("Properties...", "unit=micron pixel_width=0.1121460 pixel_height=0.1121460 ");
+				
+				savename = "LNR_"+list[i]; //feature request, append LNR using 'File.nameWithoutExtension'
+				saveAs("Tiff", dir2+savename);
+				
+				//append pixel measurements to results table
+				getDimensions(width, height, channels, slices, frames);
+				getPixelSize(unit, pixelWidth, pixelHeight);
+				spindleLength = width*pixelWidth;
+				
+				//add more lines in the results table if it is not long enough
+				for(line=0;line<width;line++){
+					setResult(unit,line,line*pixelWidth);
+					}
+					
+				//append the data to a new labeled column
+				for(line=0;line<width;line++){
+					value = (getPixel(line,height/2));
+					
+					value = round(value);
+					setResult(savename,line,value);
+					}
+				
+				updateResults();
+				selectWindow(savename);
+				close();
+				}
+			}
+		//print tifs that are not 16-bit
+		else{
+			print(list[i]+" was not processed because it is "+bitDepth()+" bit");
+			selectWindow(list[i]);
+			close();
+			}
+		}
+	//print files/folders that are not tif's
+	else print(list[i]+" was not included");
+
+}
+
+selectWindow("Results");
+saveAs("Measurements", dir2+"Results.xls");
+print("Results saved as \n"+dir2+"Results.xls");
+
+}

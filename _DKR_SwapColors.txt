@@ -1,0 +1,8 @@
+macro "swap colors"{
+
+Stack.setChannel(1);
+run("Green");
+Stack.setChannel(2);
+run("Red");
+
+}

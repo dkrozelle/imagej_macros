@@ -1,0 +1,19 @@
+macro _DKR_Center_ROI {
+
+
+getDimensions(width, height, channels, slices, frames);
+bleachsize=10;
+wide=width;
+high=height;
+
+x=(wide/2)-(50);
+y=(high/2)-(50);
+run("Specify...", "width=100 height=100 x="+x+" y="+y+" oval");
+run("To Selection");
+run("Select None");
+
+x=(wide/2)-(bleachsize/2);
+y=(high/2)-(bleachsize/2);
+run("Specify...", "width="+bleachsize+" height="+bleachsize+" x="+x+" y="+y+" oval");
+ 
+}

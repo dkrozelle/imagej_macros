@@ -1,0 +1,35 @@
+//20090703 ciclistadan
+//quick way to max project 2um of an image
+
+macro "go"{
+
+//set the total um you want projected
+depth=2;
+//assume each slice is 300nm apart
+slicedepth=depth/0.3;
+
+Stack.getPosition(channel,slice,frame);
+getDimensions(width, height, channels, slices, frames);
+
+if(slice-(slicedepth/2)<=0) bottom=0;
+else bottom = slice-(slicedepth/2);
+
+if(slice+(slicedepth/2)>=slices) top=slices;
+else top = slice+(slicedepth/2);
+
+name = getTitle();
+run("Duplicate...", "title="+name+" duplicate");
+run("Z Project...", "start="+bottom+" stop="+top+" projection=[Average Intensity]");
+selectWindow(name);
+close();
+run("Enhance Contrast", "saturated=0.5");
+run("Set... ", "zoom=300");
+
+
+run("Save");
+close();
+
+selectWindow(name);
+close();
+
+}

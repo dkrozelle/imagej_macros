@@ -1,0 +1,60 @@
+//still some problems with this shit
+//does not correctly use the if statement, it always enters and resets zmax 
+//independent of current max value...needs to debug
+
+
+macro "AutoScaleBrightestSlice [l]"{
+
+//get the image dimensions
+getDimensions(width, height, channels, slices, frames);
+c=channels;
+favorite = 3; //choose the channel you want to autofocus on
+
+//define which colors you want to use on each channel
+if(channels>1){
+lookuptable = newArray(3);
+lookuptable[0] = "Grays";
+lookuptable[1] = "Blue";
+lookuptable[2] = "Green";
+lookuptable[3] = "Red";
+}
+else {
+lookuptable = newArray(1);
+lookuptable[0] = "Grays";
+}
+
+
+
+//search each channel for the max slice containing the max intensity pixel
+for(c;c>0;c--){
+Stack.setChannel(c);
+run(lookuptable[c-1]);
+
+//reset max counters for each channel
+slicemax=0;
+channelmax = 0;
+channelmin = 0;
+
+	//get max value of each slice, remember it if it is the largest you have seen for this channel
+	for(z=1;z<=slices;z++){
+		Stack.setSlice(z);
+		getStatistics(area, mean, min, max, std, histogram);
+			
+			if(max > channelmax) {
+				channelmax = max;
+				slicemax = z;
+				}
+			if(min < channelmin) {
+				channelmin = min;
+				}
+
+	}
+
+
+	//move to the brightest intensity slice on channel1 and use auto contrast
+	//print("channel= "+c+" slice= "+slicemax+" max value= "+channelmax+" min value= "+channelmin);
+	Stack.setSlice(slicemax);
+	run("Enhance Contrast", "saturated=0.2");
+}
+
+}

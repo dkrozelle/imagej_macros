@@ -1,0 +1,9 @@
+macro "go" {
+
+screenwidth=screenWidth();
+ 
+run("Channels Tool...");
+run("Color Balance...");
+
+
+}

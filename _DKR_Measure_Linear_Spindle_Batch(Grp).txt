@@ -1,0 +1,77 @@
+//takes linearized spindle projections and writes a results table from 
+//a line drawn across the middle of the image (spindle center)
+//
+//***this macro takes an ROI 15px tall ROI from the center the middle pixel value for each column, 
+//see _DKR_Measure_Linear_Spindle_Batch.txt for center line only
+
+macro "_DKR_Measure_Linear_Spindle_Batch(Grp)"{
+
+//set these variables before running
+object = "spindle" //what do you want to measure, can be either "spindle" or "background"
+sampleheight=15;    //how many pixels will you inclide in each bin?
+
+if(nImages>0) exit ("close all images before proceeding");
+
+
+run("Clear Results");
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+
+//get a list of all the files in this folder 
+list = getFileList(dir1);
+
+for(i=0;i<list.length;i++){
+	
+	//only open tif images
+	if(endsWith(list[i],"tif")||endsWith(list[i],"TIF")){
+		//open the image and set its variables
+		open(dir1+list[i]);
+		run("Subtract Background...", "rolling=50");
+		getDimensions(width, height, channels, slices, frames);
+		getPixelSize(unit, pixelWidth, pixelHeight);
+		name = getTitle;
+		spindleLength = width*pixelWidth;
+		
+	
+		//add more lines to the results table if it is not long enough
+		for(line=0;line<width;line++){
+			setResult(unit,line,line*pixelWidth);
+			}
+			
+		//append the data to a new labeled column
+		//an array will save the data for all pixels in each columns
+		values=newArray(sampleheight);
+		
+		//what y-coordinate does your 'column' of pixels start at?
+		
+		if(object=="spindle"){
+			startpx=round((height-sampleheight)/2); //this is for a middle section
+			}
+		else if(object=="background"){
+			startpx=0; //this is for the upper section, background usually
+			}
+		
+		//iterate for each x-coord
+		for(line=0;line<width;line++){
+			//capture the values for all pixels in along that x-
+			for(h=0; h<values.length; h++){
+				values[h]=getPixel(line,startpx+h);
+				Array.getStatistics(values, min, max, mean, std);
+				value=mean;
+				}
+			setResult(name,line,value);
+			}
+		
+		updateResults();
+		selectWindow(list[i]);
+		close();
+	
+		}
+	}
+
+selectWindow("Results");
+saveAs("Measurements", dir1+"Results.xls");
+print("Results saved as \n"+dir1+"Results.xls");
+

@@ -1,0 +1,38 @@
+//ImageJ macro
+//20090617
+//made by Dan Rozelle
+//
+//originally meant to be used after the _DKR_Straighten_Spindle.txt macro
+//this takes a straightened horizontal spindle and projects the max value onto
+//a single pixel high array, nice graphical representation of the data
+
+
+
+macro "_DKR_Project_Spindle"{
+
+name=getTitle();
+getDimensions(width, height, channels, slices, frames);
+
+//an array to keep our projected line
+spindleline = newArray(width);
+
+for(x=0;x<width;x++){
+	valuemax = 0;
+	for(y=0;y<height;y++){
+		
+		if(getPixel(x,y) > valuemax) {
+			valuemax = getPixel(x,y);	
+			}
+		}
+	spindleline[x]=valuemax;
+	}
+
+newImage(name, "16-bit", width, 1, 1);
+
+for(x=0;x<width;x++){
+	setPixel(x,0,spindleline[x]);
+	}
+updateDisplay()
+run("Set... ", "zoom=1000");
+
+}

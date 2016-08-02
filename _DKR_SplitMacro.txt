@@ -1,0 +1,27 @@
+macro "splitthatshit" {
+dir1=getDirectory("Choose source directory");
+list=getFileList(dir1);
+
+for(i=0;i<list.length;i++){
+
+open(dir1+list[i]);
+run("Split Channels");
+selectWindow("C1-"+list[i]);
+saveAs("Tiff", dir1+list[i]+"_C1");
+close();
+
+selectWindow("C2-"+list[i]);
+saveAs("Tiff", dir1+list[i]+"_C2");
+close();
+}
+
+}
+
+
+
+
+
+
+//run("Bio-Formats Importer", "open="+dir1+list[i] +" view=Hyperstack stack_order=XYCZT colorize autoscale");
+//run("Properties...", "channels=2 slices=40 frames=1 unit=micron pixel_width=0.1121464 pixel_height=0.1121464 voxel_depth=0.2000000 frame=[NaN sec] origin=0,0");
+//run("Make Composite", "display=Composite");

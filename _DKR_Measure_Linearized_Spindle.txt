@@ -1,0 +1,59 @@
+//20090617
+//ImageJ macro by ciclistadan
+//
+//originally designed to take a straightened spindle image with the spindle exactly
+//halfway down the image (at height/2)
+//
+//this macro has been changed to sort through a folder of straightened images, leaving open only those that meet certain criteria, namely length
+//alternately, they can be sorted and saved in a new folder
+
+macro "_DKR_Sort_linear_spindles"{
+
+min_length  = 7;      //length in microns
+max_length  = 15;     //length in microns
+sort        = "yes"; 
+leaveopen   = "yes";
+
+//batch functions, comment out for indivudual use
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+list = getFileList(dir1);
+
+  dir2 = dir1+min_length+"_to_"+max_length+"_spindles"+File.separator;
+  File.makeDirectory(dir2);
+  if (!File.exists(dir2))
+      exit("Unable to create directory");
+
+//open each image
+for(i=0;i<list.length;i++){
+	open(dir1+list[i]);
+	selectWindow(list[i]);
+	
+	getDimensions(width, height, channels, slices, frames);
+	getPixelSize(unit, pixelWidth, pixelHeight);
+	name = File.name;
+	spindleLength = width*pixelWidth;
+	
+	if(spindleLength > min_length && spindleLength < max_length){
+		if(sort == "yes"){
+			saveAs("Tiff", dir2+name+".tif");
+			}
+		else{}
+		}
+	
+	}
+	else{
+		selectWindow(list[i]);
+		close();
+		}
+	
+	
+	//decide if the image should be closed
+	if(leaveopen == "yes"){
+		}
+	else{
+		selectWindow(list[i]);
+		close();
+		}
+}

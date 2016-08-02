@@ -1,0 +1,173 @@
+// created by Dan Rozelle 20091110
+//used to quickly open each  movie, select the category, write results to table and close
+
+
+
+macro "_DKR_Batch_defineSpindleMidzone"{
+
+if(nImages>0) exit ("close all images before proceeding");
+
+	if(isOpen("Results")){
+		selectWindow("Results");
+		run("Close");
+		}
+	if(isOpen("Log")){
+		selectWindow("Log");
+		run("Close");
+		}
+
+//list auto functions here, adjust mode as necessary
+function batchfunction();
+mode           = newArray("AUTO", "MANUAL", "BOTH");
+filter_choices = newArray('NO', '.dv', 'D3D.dv', 'R3D.dv', '.tif');
+
+/**********************************************************/
+
+Dialog.create("Select Options");
+ 	Dialog.addChoice("Method",mode,"AUTO");
+ 	Dialog.addChoice("Filter",filter_choices,"dv");
+	
+	Dialog.show();
+
+	mode=Dialog.getChoice();
+	filter=Dialog.getChoice();
+	
+/**********************************************************/
+
+
+
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+
+if(filter == "NO"){
+	list = getFileList(dir1);
+	}
+else{
+	
+//get a list of all the files in this folder 
+	preList = getFileList(dir1);
+	size=0;
+	
+	//count each '*filter*' files
+	for(place=0;place<preList.length;place++){
+		if(endsWith(preList[place],filter)){
+			size++;
+		}
+	}
+	//create a new array and populate with filtered images
+	list=newArray(size);
+	position=0;
+	for(place=0;place<preList.length;place++){
+		if(endsWith(preList[place],filter)){
+			list[position]=preList[place];
+			position++;
+			}
+		}
+	}
+
+
+/********************************************************************/
+/* allows the user to type in the appropriate experiment identifiers*/
+
+Dialog.create("Movie Identifiers");
+	Dialog.addMessage(dir1);
+ 	Dialog.addMessage(list[0]);
+
+ 	Dialog.addString("Experiment","48.01");
+ 	 	
+	Dialog.show();
+	
+	expname= Dialog.getString();
+
+/*******************************************************************/
+
+	
+
+//starting with the first image, we increment through each image until we have done 6, or finish our list, whichever comes first
+  for(i=0; i<list.length; i++) {
+	//open a two color image in separate channel stacks
+
+	
+	if(filter == 'dv' || filter == 'D3D.dv' || filter ==  'R3D.dv'){
+		run("Bio-Formats Importer", "open="+dir1+list[i]+" view=Hyperstack stack_order=XYCZT");
+		}
+	else{
+		open(dir1+list[i]);
+		}
+		
+	run("Enhance Contrast", "saturated=0.35");
+
+//	run("Set... ", "zoom=300");
+//	waitForUser("adjust your image");
+	
+		
+	if(mode == "MANUAL"){
+		wait(100);
+		run("Install...", "install=C:\\ImageJ\\macros\\_DKR_AutoScaleBrightestSlice.txt");
+		waitForUser("click OK \nto proceed"); 
+		}
+	
+	else if(mode == "AUTO"){
+		selectWindow(list[i]);
+		run("Set... ", "zoom=300");
+		batchfunction(list[i]);
+		
+		}
+
+	
+	
+	//close the window after dialog box is closed
+	selectWindow(list[i]);
+	close();
+	}
+}
+
+
+function batchfunction(name)
+{
+	setResult("Label",nResults,name);
+	setResult("Exp",nResults-1,expname);
+	setTool("point");
+	
+	waitForUser("put a point on the midzone");
+	
+	/**/
+Dialog.create("Select Categories");
+	choices = newArray("defined","abnormal","metaphase");
+
+ 	Dialog.addChoice("This midzone is:",choices,"well defined");
+	
+	Dialog.show();
+	
+	choice = Dialog.getChoice();		
+	/**/
+		
+	pointbool = selectionType();
+	if(pointbool == 10){
+		getSelectionBounds(x,y,width,height);
+		wide = getWidth();
+		
+		midzone_px  = x;
+		midzone_pct = midzone_px/wide; 
+		
+		setResult("midzone_px", nResults-1,midzone_px );
+		setResult("total_px",   nResults-1,wide       );
+		setResult("midzone_pct",nResults-1,midzone_pct);
+		
+			if(choice == "defined")     {setResult("defined",nResults-1,1);}
+			else if(choice == "abnormal"){setResult("abnormal",nResults-1,1);}
+			else if(choice == "metaphase"){setResult("metaphase",nResults-1,1);}
+			else{};
+
+		updateResults();
+		}
+	else{
+		print("you f-d up");
+		}
+
+
+}
+
+

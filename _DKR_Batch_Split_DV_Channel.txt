@@ -1,0 +1,80 @@
+// created by Dan Rozelle 20091005
+//used to quickly open each DV movie, and wait to do some simple manual function or paste another macro as a function
+
+
+
+macro "_DKR_Batch_Split_DV_Channel"{
+
+//list filetypes to include
+filter="";
+
+//which channel do you want to save (start with 0)
+channel="1";
+
+//list auto functions here, adjust mode as necessary
+function batchfunction();
+mode="AUTO";  //use "MANUAL" or "AUTO" or "BOTH"
+
+if(nImages>0) exit ("close all images before proceeding");
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+	
+dir2 = getDirectory("Choose output directory");
+if (dir2=="")
+      exit("No directory available");
+      
+//get a list of all the files in this folder 
+preList = getFileList(dir1);
+size=0;
+
+	
+
+//count each '*filter*' files
+for(place=0;place<preList.length;place++){
+	if(endsWith(preList[place],filter)){
+		size++;
+	}
+}
+//create a new array and populate with filtered images
+list=newArray(size);
+position=0;
+for(place=0;place<preList.length;place++){
+	if(endsWith(preList[place],filter)){
+		list[position]=preList[place];
+		position++;
+		}
+	}
+
+
+
+//starting with the first image, we increment through each image until we have done 6, or finish our list, whichever comes first
+  for(i=0; i<list.length; i++) {
+	//open a two color image in separate channel stacks
+	run("Bio-Formats Importer", "open="+dir1+list[i]+" view=Hyperstack stack_order=XYCZT split_channels autoscale");
+	
+	if(mode=="MANUAL"){
+		wait(100);
+		run("Install...", "install=C:\\ImageJ\\macros\\_DKR_AutoScaleBrightestSlice.txt");
+		waitForUser("click OK \nto proceed"); 
+		}
+	
+	else if(mode=="AUTO"){
+		new=list[i]+" - C="+channel;
+		selectWindow(new);
+		print("output: "+dir2+new+".tif");
+		saveAs("Tiff", dir2+new+".tif");
+//		batchfunction(dir1, list[i]);
+		
+		
+		}
+
+	//close all windows after dialog box is closed
+	while (nImages >0) close();
+	}
+}
+
+
+
+

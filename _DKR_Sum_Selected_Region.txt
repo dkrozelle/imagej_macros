@@ -1,0 +1,35 @@
+/********************************************************
+/*imageJ macro written by dan rozelle dan.rozelle@gmail.com
+/*  20091106
+/*
+/*  extracts area and mean pixel value for a selection (or entire image if 
+/*   selection is omitted) and appends the sum of all selected pixels to the 
+/*   results panel 
+/*
+/*  use the 'u' hotkey to run repeatedly after installing
+/********************************************************/
+
+
+macro "_DKR_Sum_Selected_Region [u]" {
+
+	getVoxelSize(width, height, depth, unit);
+	pixelWidth = width;
+	
+	run("Set Measurements...", "area mean redirect=None decimal=2");
+	
+	
+	run("Measure");
+	
+	selection_area = getResult("Area",nResults-1);
+	selection_mean = getResult("Mean",nResults-1);
+	
+	selection_area = selection_area/(pixelWidth*pixelWidth);
+	selection_sum  = selection_area * selection_mean;
+	
+	setResult("Pixels Selected",nResults-1,selection_area);
+	setResult("Sum",nResults-1,selection_sum);
+	
+	
+	updateResults();
+
+}

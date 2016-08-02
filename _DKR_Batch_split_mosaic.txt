@@ -1,0 +1,101 @@
+// created by Dan Rozelle 20091005
+//used to quickly open each DV movie, and wait to do some simple manual function or paste another macro as a function
+
+
+macro "split"{
+
+//list auto functions here, adjust mode as necessary
+function batchfunction();
+mode="MANUAL";  //use "MANUAL" or "AUTO" or "BOTH"
+
+if(nImages>0) exit ("close all images before proceeding");
+
+
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+
+//get a list of all the files in this folder 
+preList = getFileList(dir1);
+size=0;
+
+//include only certain filetypes
+	filter=".zvi";
+	
+
+//count each '*filter*' files
+for(place=0;place<preList.length;place++){
+	if(endsWith(preList[place],filter)){
+		size++;
+	}
+}
+//create a new array and populate with filtered images
+list=newArray(size);
+position=0;
+for(place=0;place<preList.length;place++){
+	if(endsWith(preList[place],filter)){
+		list[position]=preList[place];
+		position++;
+		}
+	}
+
+
+
+//starting with the first image, we increment through each image until we have done 6, or finish our list, whichever comes first
+  for(i=0; i<list.length; i++) {
+	
+	run("Bio-Formats Importer", "open="+dir1+list[i]+" color_mode=Composite view=Hyperstack stack_order=XYCZT ");
+	base = File.nameWithoutExtension;
+
+
+	selectWindow(list[i]);
+	rename("current");
+	batchfunction(base,dir1);
+
+	
+	//close the window after dialog box is closed
+	selectWindow("current");
+	close();
+	}
+}
+
+showMessage("done")
+
+
+
+function batchfunction(base, dir1)
+{
+
+selectWindow("current");
+run("Enhance Contrast", "saturated=0.35");
+run("Specify...", "width=2688 height=2048 x=0 y=0 slice=1");
+run("Duplicate...", "title="+base+"-1.zvi duplicate channels=1-3 frames=1-7");
+selectWindow(base+"-1.zvi");
+saveAs("Tiff", dir1+base+"-1.tif");
+selectWindow(base+"-1.tif");
+close();
+
+selectWindow("current");
+run("Specify...", "width=2688 height=2048 x=2688 y=0 slice=1");
+run("Duplicate...", "title="+base+"-2.zvi duplicate channels=1-3 frames=1-7");
+selectWindow(base+"-2.zvi");
+saveAs("Tiff", dir1+base+"-2.tif");
+selectWindow(base+"-2.tif");
+close();
+
+selectWindow("current");
+run("Specify...", "width=2688 height=2048 x=0 y=2048 slice=1");
+run("Duplicate...", "title="+base+"-3.zvi duplicate channels=1-3 frames=1-7");
+selectWindow(base+"-3.zvi");
+saveAs("Tiff", dir1+base+"-3.tif");
+selectWindow(base+"-3.tif");
+close();
+
+selectWindow("current");
+run("Specify...", "width=2688 height=2048 x=2688 y=2048 slice=1");
+run("Duplicate...", "title="+base+"-4.zvi duplicate channels=1-3 frames=1-7");
+selectWindow(base+"-4.zvi");
+saveAs("Tiff", dir1+base+"-4.tif");
+selectWindow(base+"-4.tif");
+close();
+}

@@ -1,0 +1,36 @@
+//rotates the current image such that a given line is made horizontal
+//the first point is now on the left and the second on the right wide
+
+
+macro "rotate cell"{
+
+run("Set Measurements...", "  perimeter display redirect=None decimal=2");
+getLine(x1,y1,x2,y2,lineWidth);
+
+//print("x1: "+x1)
+//print("x2: "+x2)
+//print("y1: "+y1)
+//print("y2: "+y2)
+
+radians=atan(abs(y1-y2)/abs(x1-x2));
+
+//print("radians: "+radians);
+offset = radians*(180/3.145)
+//print("degrees: "+offset);
+
+if(x1<x2){
+	if(y1<y2) angle=-offset;          // down to the right line
+	else if(y1>y2) angle=offset;        // up to the right line
+	}
+else if(x1>x2){
+	if(y1>y2) angle=(90-offset)+90;  // up to the left line
+	else if(y1<y2) angle=offset+180;      // down to the left line
+	}
+
+else if(x1==x2 && y1<y2) angle=-90;           // vertical up line
+else if(x1==x2 && y1>y2) angle=90;           // vertical down line 
+else if(y1==y2) angle=0;                     //already horizontal, no change needed  
+
+run("Arbitrarily...", "angle="+angle+" grid=1 interpolation=Bilinear stack");
+
+}

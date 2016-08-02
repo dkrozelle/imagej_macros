@@ -1,0 +1,83 @@
+//20090617
+//ImageJ macro by ciclistadan
+//
+//originally designed to take a straightened spindle image with the spindle exactly
+//halfway down the image (at height/2)
+//
+//this macro has been changed to sort through a folder of straightened images, leaving open only those that meet certain criteria, namely length
+//alternately, they can be sorted and saved in a new folder
+
+macro "_DKR_Sort_linear_spindles"{
+
+setBatchMode(true);
+//creates folders 0 to length1, len1 to len2, len2 to len3
+length1  = 4.5;      //length in microns
+length2  = 10;     //length in microns
+length3  = 15;
+sort        = "yes"; 
+leaveopen   = "no";
+
+//batch functions, comment out for indivudual use
+dir1 = getDirectory("Choose source directory");
+if (dir1=="")
+      exit("No directory available");
+list = getFileList(dir1);
+
+  dir2 = dir1+"0_to_"+length1+"um_spindles"+File.separator;
+  dir3 = dir1+length1+"_to_"+length2+"um_spindles"+File.separator;
+  dir4 = dir1+length2+"_to_"+length3+"um_spindles"+File.separator;
+  
+  File.makeDirectory(dir2);
+  if (!File.exists(dir2))
+      exit("Unable to create directory2");
+  File.makeDirectory(dir3);
+  if (!File.exists(dir3))
+      exit("Unable to create directory3");
+  File.makeDirectory(dir4);
+  if (!File.exists(dir4))
+      exit("Unable to create directory4");
+
+//open each image
+for(i=0;i<list.length;i++){
+	showProgress(i/list.length);
+	if(File.isDirectory(dir1+list[i])){
+		}
+	else{
+		open(dir1+list[i]);
+		selectWindow(list[i]);
+		
+		getDimensions(width, height, channels, slices, frames);
+		getPixelSize(unit, pixelWidth, pixelHeight);
+		name = list[i];
+		spindleLength = width*pixelWidth;
+		
+		if(spindleLength < length1){
+			run("Subtract Background...", "rolling=50");
+			saveAs("Tiff", dir2+name);
+			selectWindow(list[i]);
+			close();
+			}
+		else if(spindleLength >= length1 && spindleLength < length2){
+						run("Subtract Background...", "rolling=50");
+			saveAs("Tiff", dir3+name);
+			selectWindow(list[i]);
+			close();
+			}
+		else if(spindleLength >= length2 && spindleLength < length3){
+			run("Subtract Background...", "rolling=50");
+			saveAs("Tiff", dir4+name);
+			selectWindow(list[i]);
+			close();
+			}
+		
+		else{
+			selectWindow(list[i]);
+			close();
+			}
+		
+		}
+	}
+
+	print('images sorted');
+		
+}

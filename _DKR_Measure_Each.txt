@@ -1,0 +1,32 @@
+macro "_DKR_Measure"{
+
+saveAs("Tiff");
+getDimensions(width, height, channels, slices, frames);
+getPixelSize(unit, pixelWidth, pixelHeight);
+name = getTitle;
+spindleLength = width*pixelWidth;
+
+//print("width="+width);
+//print("unit="+unit);
+//print("spindleLength="+spindleLength);
+//print("pixelWidth="+pixelWidth);
+
+
+
+
+//add more lines in the results table if it is not long enough
+
+for(line=0;line<width;line++){
+	setResult(unit,line,line*pixelWidth);
+	}
+
+for(line=0;line<width;line++){
+	value = (getPixel(line,height/2)-32768);
+	value = round(value);
+	setResult(name,line,value);
+	}
+
+updateResults();
+
+
+}
