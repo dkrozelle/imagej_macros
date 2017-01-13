@@ -6,7 +6,6 @@
   The macro named "AutoRun" runs when ImageJ starts.
   macro "AutoRun" {
      run(" DanBar");
-     print("fuck you");
   }
 
   // The macro named "AutoRunAndHide" runs when ImageJ starts
